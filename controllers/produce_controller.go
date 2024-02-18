@@ -4,7 +4,7 @@ import (
 	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	http_produce_models "github.com/j7nw4r/produce-store/models"
+	"github.com/j7nw4r/produce-store/models"
 	"github.com/j7nw4r/produce-store/services"
 	"log/slog"
 	"net/http"
@@ -45,7 +45,7 @@ func (hc HttpController) GetProduce(c *gin.Context) {
 		return
 	}
 
-	resp := http_produce_models.FromSchemaToResponse(*produceEntity)
+	resp := models.FromProduceSchemaToProduce(*produceEntity)
 	c.JSON(http.StatusOK, resp)
 }
 
@@ -60,16 +60,36 @@ func (hc HttpController) SearchProduce(c *gin.Context) {
 	produceEntities, err := hc.produceService.SearchProduce(name)
 	if err != nil {
 		slog.Error(err.Error())
-		err := c.AbortWithError(http.StatusInternalServerError, errors.New("error searching for services"))
-		if err != nil {
-			slog.Error("could not abort with error")
-		}
+		c.AbortWithStatusJSON(http.StatusInternalServerError, "error searching for services")
 		return
 	}
 
-	responses := http_produce_models.FromSchemasToResponses(produceEntities)
+	responses := models.FromProduceSchemasToProduces(produceEntities)
 	c.JSON(http.StatusOK, responses)
 }
 
 func (hc HttpController) PostProduce(c *gin.Context) {
+	p := models.Produce{}
+	if err := c.Bind(&p); err != nil {
+		slog.Error(err.Error())
+		c.AbortWithStatusJSON(http.StatusInternalServerError, "could not read read body")
+		return
+	}
+
+	pSchema, err := models.FromProduceToProduceSchema(p)
+	if err != nil {
+		slog.Error(err.Error())
+		c.AbortWithStatusJSON(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	retProduceSchema, err := hc.produceService.StoreProduce(*pSchema)
+	if err != nil {
+		slog.Error(err.Error())
+		c.AbortWithStatusJSON(http.StatusInternalServerError, "could not store produce")
+		return
+	}
+
+	retP := models.FromProduceSchemaToProduce(*retProduceSchema)
+	c.JSON(http.StatusOK, retP)
 }

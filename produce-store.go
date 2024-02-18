@@ -1,36 +1,28 @@
 package main
 
 import (
+	"database/sql"
 	"github.com/gin-gonic/gin"
+	_ "github.com/glebarez/go-sqlite"
+	"github.com/j7nw4r/produce-store/http"
+	"github.com/j7nw4r/produce-store/produce"
 	"log/slog"
-	"net/http"
 )
 
 func main() {
+	db, err := sql.Open("sqlite", ":memory:")
+	if err != nil {
+		slog.Error(err.Error())
+		return
+	}
+	produceService := produce.NewProduceService(db)
+	httpController := http.NewHttpController(produceService)
+
 	r := gin.Default()
-	r.POST("/produce", PostProduce)
-	r.GET("/produce/:id", GetProduce)
-	r.GET("/search", SearchProduce)
+	r.POST("/produce", httpController.PostProduce)
+	r.GET("/produce/:id", httpController.GetProduce)
+	r.GET("/search", httpController.SearchProduce)
 	if err := r.Run(); err != nil {
 		slog.Error("%s", err)
 	}
-}
-
-func GetProduce(c *gin.Context) {
-	id := c.Param("id")
-
-	c.JSON(http.StatusOK, gin.H{
-		"message": "pong" + id,
-	})
-}
-
-func SearchProduce(c *gin.Context) {
-	name := c.Query("name")
-
-	c.JSON(http.StatusOK, gin.H{
-		"message": "pong" + name,
-	})
-}
-
-func PostProduce(c *gin.Context) {
 }

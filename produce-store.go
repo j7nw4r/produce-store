@@ -1,28 +1,30 @@
 package main
 
 import (
-	"database/sql"
 	"github.com/gin-gonic/gin"
 	_ "github.com/glebarez/go-sqlite"
-	"github.com/j7nw4r/produce-store/http"
-	"github.com/j7nw4r/produce-store/produce"
+	"github.com/j7nw4r/produce-store/controllers"
+	db2 "github.com/j7nw4r/produce-store/db"
+	"github.com/j7nw4r/produce-store/services"
 	"log/slog"
 )
 
 func main() {
-	db, err := sql.Open("sqlite", ":memory:")
+	db, err := db2.NewDB()
 	if err != nil {
 		slog.Error(err.Error())
 		return
 	}
-	produceService := produce.NewProduceService(db)
-	httpController := http.NewHttpController(produceService)
+
+	// Deps
+	produceService := services.NewProduceService(db)
+	httpController := controllers.NewHttpController(produceService)
 
 	r := gin.Default()
-	r.POST("/produce", httpController.PostProduce)
-	r.GET("/produce/:id", httpController.GetProduce)
+	r.POST("/services", httpController.PostProduce)
+	r.GET("/services/:id", httpController.GetProduce)
 	r.GET("/search", httpController.SearchProduce)
-	if err := r.Run(); err != nil {
+	if err := r.Run("localhost:23234"); err != nil {
 		slog.Error("%s", err)
 	}
 }

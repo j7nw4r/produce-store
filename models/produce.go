@@ -5,11 +5,12 @@ import (
 	"math"
 )
 
+// Produce Example
 type Produce struct {
-	Id    int     `json:"id"`
-	Code  string  `json:"code"`
-	Name  string  `json:"name"`
-	Price float32 `json:"price"`
+	Id    int     `json:"id" example:"1" format:"int32"`
+	Code  string  `json:"code" example:"A12T-4GH7-QPL9-3N4M"`
+	Name  string  `json:"name" example:"bannana"`
+	Price float32 `json:"price" example:"3.32" format:"float32"`
 }
 
 func FromProduceSchemaToProduce(s schemas.ProduceSchema) Produce {
@@ -29,6 +30,7 @@ func FromProduceSchemasToProduces(ss []schemas.ProduceSchema) []Produce {
 	responses := []Produce{}
 	for _, s := range ss {
 		resp := Produce{
+			Id:    s.Id,
 			Code:  s.Code,
 			Name:  s.Name,
 			Price: s.Price,

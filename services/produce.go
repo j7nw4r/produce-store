@@ -14,7 +14,8 @@ var (
 	ErrBadRequest = errors.New("bad request")
 )
 
-const SelectProduceSql = "select * from main.produce where id = ?"
+const SelectAllProduce = "select * from main.produce"
+const SelectProduceByIdSql = "select * from main.produce where id = ?"
 const SelectProduceByLikeNameSql = "select * from main.produce where name like ? || '%'"
 const SelectProduceByLikeCodeSql = "select * from main.produce where code like ? || '%'"
 const InsertProduceSqlReturning = "insert into produce (code, name, price)  values (?, ?, ?) returning *"
@@ -28,12 +29,31 @@ func NewProduceService(db *sql.DB) ProduceService {
 	return ProduceService{db: db}
 }
 
+func (ps ProduceService) GetAllProduce(ctx context.Context) ([]schemas.ProduceSchema, error) {
+	rows, err := ps.db.QueryContext(ctx, SelectAllProduce)
+	if err != nil {
+		slog.Error(err.Error())
+		return nil, errors.New("could not select all produce")
+	}
+
+	prods := []schemas.ProduceSchema{}
+	for rows.Next() {
+		var prod schemas.ProduceSchema
+		if err := rows.Scan(&prod.Id, &prod.Code, &prod.Name, &prod.Price); err != nil {
+			return nil, errors.New("could not gather all produce")
+		}
+		prods = append(prods, prod)
+	}
+
+	return prods, nil
+}
+
 func (ps ProduceService) GetProduce(ctx context.Context, id int) (*schemas.ProduceSchema, error) {
 	if id <= 0 {
 		return nil, ErrBadRequest
 	}
 
-	stmt, err := ps.db.PrepareContext(ctx, SelectProduceSql)
+	stmt, err := ps.db.PrepareContext(ctx, SelectProduceByIdSql)
 	if err != nil {
 		slog.Error(err.Error())
 		return nil, fmt.Errorf("could seletect for id: %s", id)

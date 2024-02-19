@@ -25,6 +25,53 @@ func NewHttpController(produceService *services.ProduceService) HttpController {
 	}
 }
 
+// @BasePath /produce
+
+// GetAllProduce godoc
+// @Summary Returns all produce entities
+// @Schemes
+// @Description Get all produce entities.
+// @Tags produce
+// @Produce json
+// @Success 200 {array} models.Produce
+// @Failure 400 {string} string "bad request"
+// @Failure 404 {string} string "not found"
+// @Failure 500 {string} string "internal error"
+// @Router /produce [get]
+func (hc HttpController) GetAllProduce(c *gin.Context) {
+
+	prodEntities, err := hc.produceService.GetAllProduce(c)
+	if err != nil {
+		slog.Error(err.Error())
+		switch {
+		case errors.Is(err, services.ErrNotFound):
+			c.AbortWithStatusJSON(http.StatusNotFound, "produce not found")
+		case errors.Is(err, services.ErrBadRequest):
+			c.AbortWithStatusJSON(http.StatusInternalServerError, err.Error())
+		default:
+			c.AbortWithStatusJSON(http.StatusInternalServerError, "error getting services")
+		}
+		return
+	}
+
+	resp := models.FromProduceSchemasToProduces(prodEntities)
+	c.JSON(http.StatusOK, resp)
+}
+
+// GetProduce godoc
+// @Summary Returns a produce entity based on the id
+// @Schemes
+// @Description Get a produce entity.
+// @Tags produce
+// @Produce json
+//
+//	@Param			id		path		int					true	"Produce ID"
+//
+// @Success 200 {object} models.Produce
+// @Failure 400 {string} string "bad request"
+// @Failure 404 {string} string "not found"
+// @Failure 500 {string} string "internal error"
+// @Router /produce/{id} [get]
 func (hc HttpController) GetProduce(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
@@ -58,6 +105,20 @@ func (hc HttpController) GetProduce(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
+// DeleteProduce godoc
+// @Summary Deletes a produce entity based on the id
+// @Schemes
+// @Description Deletes a produce entity.
+// @Tags produce
+// @Produce json
+//
+//	@Param			id		path		int					true	"Produce ID"
+//
+// @Success 200 {object} models.Produce
+// @Failure 400 {string} string "bad request"
+// @Failure 404 {string} string "not found"
+// @Failure 500 {string} string "internal service error"
+// @Router /produce/{id} [delete]
 func (hc HttpController) DeleteProduce(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
@@ -91,6 +152,20 @@ func (hc HttpController) DeleteProduce(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
+// SearchProduce godoc
+// @Summary Searches for a produce entity based on the name or code.
+// @Schemes
+// @Description Searches for a produce entity.
+// @Tags produce
+// @Produce json
+//
+//	@Param			name	query		string	false	"name search"
+//	@Param			code	query		string	false	"code search"
+//
+// @Success 200 {array} models.Produce
+// @Failure 400 {string} string "bad request"
+// @Failure 500 {string} string "internal error"
+// @Router /search [get]
 func (hc HttpController) SearchProduce(c *gin.Context) {
 	name := c.Query("name")
 	code := c.Query("code")
@@ -128,6 +203,21 @@ func (hc HttpController) SearchProduce(c *gin.Context) {
 	c.JSON(http.StatusOK, responses)
 }
 
+// PostProduce godoc
+// @Summary Uploads produce entities.
+// @Schemes
+// @Description Uploads produce entities.
+// @Tags produce
+//
+//	@Accept			json
+//
+//	@Param			message  body		[]models.Produce	true	"Account Info"
+//
+// @Produce json
+// @Success 200 {object} models.Produce
+// @Failure 400 {string} string "bad request"
+// @Failure 500 {string} string "internal error"
+// @Router /produce [post]
 func (hc HttpController) PostProduce(c *gin.Context) {
 	pp := []models.Produce{}
 	if err := c.Bind(&pp); err != nil {

@@ -6,9 +6,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/j7nw4r/produce-store/controllers"
 	db2 "github.com/j7nw4r/produce-store/db"
+	"github.com/j7nw4r/produce-store/docs"
 	"github.com/j7nw4r/produce-store/services"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	swaggerfiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 	"log/slog"
 	"os"
 )
@@ -53,12 +56,14 @@ var (
 			httpController := controllers.NewHttpController(&produceService)
 
 			r := gin.Default()
-
+			docs.SwaggerInfo.BasePath = "/"
 			r.POST("/produce", httpController.PostProduce)
+			r.GET("/produce", httpController.GetAllProduce)
 			r.GET("/produce/:id", httpController.GetProduce)
 			r.GET("/search", httpController.SearchProduce)
 			r.DELETE("/produce/:id", httpController.DeleteProduce)
-			if err := r.Run("localhost:23234"); err != nil {
+			r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
+			if err := r.Run(":23234"); err != nil {
 				slog.Error("%s", err)
 			}
 		},

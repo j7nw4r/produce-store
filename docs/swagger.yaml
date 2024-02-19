@@ -1,0 +1,179 @@
+definitions:
+  models.Produce:
+    properties:
+      code:
+        example: A12T-4GH7-QPL9-3N4M
+        type: string
+      id:
+        example: 1
+        format: int32
+        type: integer
+      name:
+        example: bannana
+        type: string
+      price:
+        example: 3.32
+        format: float32
+        type: number
+    type: object
+host: localhost:23234
+info:
+  contact:
+    email: johnathan@w4r.dev
+    name: Johnathan W
+  description: This is a sample produce store server.
+  title: Produce Store API
+  version: "1.0"
+paths:
+  /produce:
+    get:
+      description: Get all produce entities.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Produce'
+            type: array
+        "400":
+          description: bad request
+          schema:
+            type: string
+        "404":
+          description: not found
+          schema:
+            type: string
+        "500":
+          description: internal error
+          schema:
+            type: string
+      summary: Returns all produce entities
+      tags:
+      - produce
+    post:
+      consumes:
+      - application/json
+      description: Uploads produce entities.
+      parameters:
+      - description: Account Info
+        in: body
+        name: message
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/models.Produce'
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Produce'
+        "400":
+          description: bad request
+          schema:
+            type: string
+        "500":
+          description: internal error
+          schema:
+            type: string
+      summary: Uploads produce entities.
+      tags:
+      - produce
+  /produce/{id}:
+    delete:
+      description: Deletes a produce entity.
+      parameters:
+      - description: Produce ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Produce'
+        "400":
+          description: bad request
+          schema:
+            type: string
+        "404":
+          description: not found
+          schema:
+            type: string
+        "500":
+          description: internal service error
+          schema:
+            type: string
+      summary: Deletes a produce entity based on the id
+      tags:
+      - produce
+    get:
+      description: Get a produce entity.
+      parameters:
+      - description: Produce ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Produce'
+        "400":
+          description: bad request
+          schema:
+            type: string
+        "404":
+          description: not found
+          schema:
+            type: string
+        "500":
+          description: internal error
+          schema:
+            type: string
+      summary: Returns a produce entity based on the id
+      tags:
+      - produce
+  /search:
+    get:
+      description: Searches for a produce entity.
+      parameters:
+      - description: name search
+        in: query
+        name: name
+        type: string
+      - description: code search
+        in: query
+        name: code
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Produce'
+            type: array
+        "400":
+          description: bad request
+          schema:
+            type: string
+        "500":
+          description: internal error
+          schema:
+            type: string
+      summary: Searches for a produce entity based on the name or code.
+      tags:
+      - produce
+swagger: "2.0"

@@ -2,6 +2,7 @@ package models
 
 import (
 	"github.com/j7nw4r/produce-store/schemas"
+	"math"
 )
 
 type Produce struct {
@@ -53,12 +54,18 @@ func FromProducesToProduceSchemas(ss []Produce) []schemas.ProduceSchema {
 
 	responses := []schemas.ProduceSchema{}
 	for _, s := range ss {
+
 		resp := schemas.ProduceSchema{
 			Code:  s.Code,
 			Name:  s.Name,
-			Price: s.Price,
+			Price: float32(roundFloat(float64(s.Price), 2)),
 		}
 		responses = append(responses, resp)
 	}
 	return responses
+}
+
+func roundFloat(val float64, precision uint) float64 {
+	ratio := math.Pow(10, float64(precision))
+	return math.Round(val*ratio) / ratio
 }

@@ -57,6 +57,7 @@ var (
 			r.POST("/produce", httpController.PostProduce)
 			r.GET("/produce/:id", httpController.GetProduce)
 			r.GET("/search", httpController.SearchProduce)
+			r.DELETE("/produce/:id", httpController.DeleteProduce)
 			if err := r.Run("localhost:23234"); err != nil {
 				slog.Error("%s", err)
 			}

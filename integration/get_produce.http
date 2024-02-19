@@ -1,0 +1,50 @@
+GET localhost:23234/produce/1
+
+> {%
+    client.test("Request executed successfully", function () {
+        client.assert(response.status === 200, "Response status is not 200");
+    });
+%}
+
+### Search by name
+
+GET localhost:23234/search?name=pea
+
+> {%
+    client.test("Request executed successfully", function () {
+        client.assert(response.status === 200, "Response status is not 200");
+    });
+%}
+
+### Search by code
+
+GET localhost:23234/search?code=A12T
+
+> {%
+    client.test("Request executed successfully", function () {
+        client.assert(response.status === 200, "Response status is not 200");
+    });
+%}
+
+
+### Upload produce
+
+POST localhost:23234/produce
+Content-Type: application/json
+
+[
+  {
+    "code": "A12T-4GH7-QPL9-3N4M",
+    "name": "water",
+    "price": 3.46
+  },
+    {
+    "code": "A12T-4GH7-W4R2-3N4M",
+    "name": "chocolate",
+    "price": 3.46
+  }
+]
+
+### Delete produce
+
+DELETE localhost:23234/produce/4

@@ -15,9 +15,10 @@ var (
 )
 
 const SelectProduceSql = "select * from main.produce where id = ?"
-const SelectProduceByLikeNameSql = "select * from main.produce where name like '%' || ?"
-const SelectProduceByLikeCodeSql = "select * from main.produce where code like '%' || ?"
+const SelectProduceByLikeNameSql = "select * from main.produce where name like ? || '%'"
+const SelectProduceByLikeCodeSql = "select * from main.produce where code like ? || '%'"
 const InsertProduceSqlReturning = "insert into produce (code, name, price)  values (?, ?, ?) returning *"
+const DeleteProduceSqlReturning = "delete from produce where id = ? returning *"
 
 type ProduceService struct {
 	db *sql.DB
@@ -36,6 +37,33 @@ func (ps ProduceService) GetProduce(ctx context.Context, id int) (*schemas.Produ
 	if err != nil {
 		slog.Error(err.Error())
 		return nil, fmt.Errorf("could seletect for id: %s", id)
+	}
+
+	row := stmt.QueryRowContext(ctx, id)
+	if row == nil {
+		return nil, errors.New("could not query db")
+	}
+
+	prod := schemas.ProduceSchema{}
+	if err := row.Scan(&prod.Id, &prod.Code, &prod.Name, &prod.Price); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, errors.New("could not map db row to produce")
+	}
+
+	return &prod, nil
+}
+
+func (ps ProduceService) DeleteProduce(ctx context.Context, id int) (*schemas.ProduceSchema, error) {
+	if id <= 0 {
+		return nil, ErrBadRequest
+	}
+
+	stmt, err := ps.db.PrepareContext(ctx, DeleteProduceSqlReturning)
+	if err != nil {
+		slog.Error(err.Error())
+		return nil, fmt.Errorf("could not delete for id: %s", id)
 	}
 
 	row := stmt.QueryRowContext(ctx, id)
@@ -100,9 +128,7 @@ func (ps ProduceService) SearchProduceByCode(ctx context.Context, code string) (
 		if err := rows.Scan(&prod.Id, &prod.Code, &prod.Name, &prod.Price); err != nil {
 			return nil, fmt.Errorf("could not search for code: %s", code)
 		}
-
 		prods = append(prods, prod)
-
 	}
 
 	return prods, nil

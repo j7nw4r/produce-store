@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"errors"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/hashicorp/go-multierror"
 	"github.com/j7nw4r/produce-store/models"
@@ -40,6 +41,39 @@ func (hc HttpController) GetProduce(c *gin.Context) {
 	}
 
 	produceEntity, err := hc.produceService.GetProduce(c, idInt)
+	if err != nil {
+		slog.Error(err.Error())
+		switch {
+		case errors.Is(err, services.ErrNotFound):
+			c.AbortWithStatusJSON(http.StatusNotFound, "produce not found")
+		case errors.Is(err, services.ErrBadRequest):
+			c.AbortWithStatusJSON(http.StatusInternalServerError, err.Error())
+		default:
+			c.AbortWithStatusJSON(http.StatusInternalServerError, "error getting services")
+		}
+		return
+	}
+
+	resp := models.FromProduceSchemaToProduce(*produceEntity)
+	c.JSON(http.StatusOK, resp)
+}
+
+func (hc HttpController) DeleteProduce(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		slog.Error("id (path param) was empty")
+		c.AbortWithStatusJSON(http.StatusBadRequest, "id must not be empty")
+		return
+	}
+
+	idInt, err := strconv.Atoi(id)
+	if err != nil {
+		slog.Error("could not convert id into uuid")
+		c.AbortWithStatusJSON(http.StatusNotFound, "not found")
+		return
+	}
+
+	produceEntity, err := hc.produceService.DeleteProduce(c, idInt)
 	if err != nil {
 		slog.Error(err.Error())
 		switch {
@@ -96,7 +130,7 @@ func (hc HttpController) SearchProduce(c *gin.Context) {
 
 func (hc HttpController) PostProduce(c *gin.Context) {
 	pp := []models.Produce{}
-	if err := c.ShouldBind(&pp); err != nil {
+	if err := c.Bind(&pp); err != nil {
 		slog.Error(err.Error())
 		c.AbortWithStatusJSON(http.StatusInternalServerError, "could not read read body")
 		return
@@ -104,9 +138,7 @@ func (hc HttpController) PostProduce(c *gin.Context) {
 
 	for _, p := range pp {
 		if err := validateProduce(&p); err != nil {
-			if inErr := c.AbortWithError(http.StatusBadRequest, err); inErr != nil {
-				c.AbortWithStatus(http.StatusInternalServerError)
-			}
+			c.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
 			return
 		}
 	}
@@ -146,8 +178,13 @@ func validateProduce(p *models.Produce) error {
 		}
 	}
 
-	if remainder := math.Remainder(float64(p.Price), .01); remainder != 0.0 {
-		result = multierror.Append(result, errors.New("price is incorrect"))
+	remainder := math.Remainder(float64(p.Price), .001)
+	roundedRemainder := math.Round(remainder)
+
+	if roundedRemainder != 0.0 {
+		retErr := fmt.Errorf("remainder was %f", remainder)
+		slog.Error(retErr.Error())
+		result = multierror.Append(result, fmt.Errorf("price is incorrect: %w", retErr))
 	}
 
 	return result

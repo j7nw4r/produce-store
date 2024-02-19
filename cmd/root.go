@@ -8,7 +8,6 @@ import (
 	db2 "github.com/j7nw4r/produce-store/db"
 	"github.com/j7nw4r/produce-store/docs"
 	"github.com/j7nw4r/produce-store/services"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -37,24 +36,11 @@ var (
 				}
 			}(db)
 
-			tableRows, err := db.Query("SELECT name FROM sqlite_master WHERE type ='table' AND name NOT LIKE 'sqlite_%'")
-			if err != nil {
-				slog.Error(errors.Wrap(err, "could not list tables").Error())
-				return
-			}
-			for tableRows.Next() {
-				var tableName string
-				if err := tableRows.Scan(&tableName); err != nil {
-					slog.Error(errors.Wrap(err, "could not list tables").Error())
-					return
-				}
-				fmt.Printf("table: %s\n", tableName)
-			}
-
 			// Deps
 			produceService := services.NewProduceService(db)
 			httpController := controllers.NewHttpController(&produceService)
 
+			gin.SetMode(gin.ReleaseMode)
 			r := gin.Default()
 			docs.SwaggerInfo.BasePath = "/"
 			r.POST("/produce", httpController.PostProduce)

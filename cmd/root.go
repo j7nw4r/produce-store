@@ -1,11 +1,13 @@
 package cmd
 
 import (
+	"database/sql"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/j7nw4r/produce-store/controllers"
 	db2 "github.com/j7nw4r/produce-store/db"
 	"github.com/j7nw4r/produce-store/services"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"log/slog"
 	"os"
@@ -19,19 +21,41 @@ var (
 		Use:   "produce-service",
 		Short: "Runs produce-service",
 		Run: func(cmd *cobra.Command, args []string) {
-			db, err := db2.NewExternalDB("sqlite://test.db")
+			db, err := db2.NewExternalDB(cmd.Context(), "test.db")
 			if err != nil {
 				slog.Error(err.Error())
 				return
 			}
+			defer func(db *sql.DB) {
+				err := db.Close()
+				if err != nil {
+					slog.Error(err.Error())
+					return
+				}
+			}(db)
+
+			tableRows, err := db.Query("SELECT name FROM sqlite_master WHERE type ='table' AND name NOT LIKE 'sqlite_%'")
+			if err != nil {
+				slog.Error(errors.Wrap(err, "could not list tables").Error())
+				return
+			}
+			for tableRows.Next() {
+				var tableName string
+				if err := tableRows.Scan(&tableName); err != nil {
+					slog.Error(errors.Wrap(err, "could not list tables").Error())
+					return
+				}
+				fmt.Printf("table: %s\n", tableName)
+			}
 
 			// Deps
 			produceService := services.NewProduceService(db)
-			httpController := controllers.NewHttpController(produceService)
+			httpController := controllers.NewHttpController(&produceService)
 
 			r := gin.Default()
-			r.POST("/services", httpController.PostProduce)
-			r.GET("/services/:id", httpController.GetProduce)
+
+			r.POST("/produce", httpController.PostProduce)
+			r.GET("/produce/:id", httpController.GetProduce)
 			r.GET("/search", httpController.SearchProduce)
 			if err := r.Run("localhost:23234"); err != nil {
 				slog.Error("%s", err)
@@ -47,7 +71,10 @@ func init() {
 
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		_, err := fmt.Fprintln(os.Stderr, err)
+		if err != nil {
+			return
+		}
 		os.Exit(1)
 	}
 }

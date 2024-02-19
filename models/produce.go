@@ -1,14 +1,11 @@
 package models
 
 import (
-	"errors"
-	"github.com/google/uuid"
 	"github.com/j7nw4r/produce-store/schemas"
-	"log/slog"
 )
 
 type Produce struct {
-	Id    string  `json:"id"`
+	Id    int     `json:"id"`
 	Code  string  `json:"code"`
 	Name  string  `json:"name"`
 	Price float32 `json:"price"`
@@ -16,16 +13,20 @@ type Produce struct {
 
 func FromProduceSchemaToProduce(s schemas.ProduceSchema) Produce {
 	return Produce{
-		Id:    s.Eid.String(),
+		Id:    s.Id,
 		Code:  s.Code,
 		Name:  s.Name,
 		Price: s.Price,
 	}
 }
 
-func FromProduceSchemasToProduces(schemas []schemas.ProduceSchema) []Produce {
-	var responses []Produce
-	for _, s := range schemas {
+func FromProduceSchemasToProduces(ss []schemas.ProduceSchema) []Produce {
+	if ss == nil {
+		return []Produce{}
+	}
+
+	responses := []Produce{}
+	for _, s := range ss {
 		resp := Produce{
 			Code:  s.Code,
 			Name:  s.Name,
@@ -36,17 +37,28 @@ func FromProduceSchemasToProduces(schemas []schemas.ProduceSchema) []Produce {
 	return responses
 }
 
-func FromProduceToProduceSchema(p Produce) (*schemas.ProduceSchema, error) {
-	eid, err := uuid.Parse(p.Id)
-	if err != nil {
-		slog.Error(err.Error())
-		return nil, errors.New("could not parse id ")
-	}
-
+func FromProduceToProduceSchema(p Produce) *schemas.ProduceSchema {
 	return &schemas.ProduceSchema{
-		Eid:   eid,
+		Id:    p.Id,
 		Code:  p.Code,
 		Name:  p.Name,
 		Price: p.Price,
-	}, nil
+	}
+}
+
+func FromProducesToProduceSchemas(ss []Produce) []schemas.ProduceSchema {
+	if ss == nil {
+		return []schemas.ProduceSchema{}
+	}
+
+	responses := []schemas.ProduceSchema{}
+	for _, s := range ss {
+		resp := schemas.ProduceSchema{
+			Code:  s.Code,
+			Name:  s.Name,
+			Price: s.Price,
+		}
+		responses = append(responses, resp)
+	}
+	return responses
 }

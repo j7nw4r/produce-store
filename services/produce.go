@@ -16,8 +16,8 @@ var (
 
 const SelectAllProduce = "select * from main.produce"
 const SelectProduceByIdSql = "select * from main.produce where id = ?"
-const SelectProduceByLikeNameSql = "select * from main.produce where name like ? || '%'"
-const SelectProduceByLikeCodeSql = "select * from main.produce where code like ? || '%'"
+const SelectProduceByLikeNameSql = "select * from main.produce where name like '%' || ? || '%'"
+const SelectProduceByLikeCodeSql = "select * from main.produce where code like '%' || ? || '%'"
 const InsertProduceSqlReturning = "insert into produce (code, name, price)  values (?, ?, ?) returning *"
 const DeleteProduceSqlReturning = "delete from produce where id = ? returning *"
 

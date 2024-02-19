@@ -1,6 +1,6 @@
 # produce-store
 
-Example produce store
+Example produce store service
 
 ## How To Run
 
@@ -22,4 +22,4 @@ Run from the repo root for the correct relative path.
 
 # Tests
 
-`.http` files are included in the integration folder.
+`.http` files are included in the `integration` folder.

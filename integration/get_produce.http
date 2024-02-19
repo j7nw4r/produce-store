@@ -1,3 +1,14 @@
+
+### Get all
+GET localhost:23234/produce
+
+> {%
+    client.test("Request executed successfully", function () {
+        client.assert(response.status === 200, "Response status is not 200");
+    });
+%}
+
+### Get by id
 GET localhost:23234/produce/1
 
 > {%
